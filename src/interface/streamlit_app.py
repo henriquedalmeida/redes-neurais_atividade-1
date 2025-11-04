@@ -507,7 +507,14 @@ def interactive_analysis(players_df, games_df):
                        'pontos_media', 'rebotes-totais_media', 'assistencias_media', 'porcentagem-arremessos_media']
 
         available_cols = [col for col in display_cols if col in filtered_players.columns]
-        st.dataframe(filtered_players[available_cols].round(2), use_container_width=True)
+        
+        display_df = filtered_players[available_cols].copy().round(2)
+        
+        if 'posicao-g-f-fc-cf-c' in display_df.columns:
+            position_labels = {1: '1 - Guard', 2: '2 - Forward', 3: '3 - Forward-Center', 4: '4 - Center-Forward', 5: '5 - Center'}
+            display_df['posicao-g-f-fc-cf-c'] = display_df['posicao-g-f-fc-cf-c'].map(position_labels)
+        
+        st.dataframe(display_df, use_container_width=True)
     else:
         st.warning("Nenhum jogador atende aos critérios selecionados.")
 
