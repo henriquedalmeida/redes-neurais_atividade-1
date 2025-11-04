@@ -128,7 +128,7 @@ def add_player_names(processed_df, original_df):
                 if len(matching_player) >= 1:
                     processed_with_names.at[idx, 'nome-jogador'] = matching_player.iloc[0]['PLAYER_NAME']
                 else:
-                    position_name = {1: 'Guard', 2: 'Forward', 3: 'Center', 4: 'Forward-Center', 5: 'Center-Forward'}
+                    position_name = {1: 'Guard', 2: 'Forward', 3: 'Forward-Center', 4: 'Center-Forward', 5: 'Center'}
                     pos = position_name.get(row.get('posicao-g-f-fc-cf-c', 0), 'Player')
                     processed_with_names.at[idx, 'nome-jogador'] = f"{pos} #{idx+1}"
 
@@ -216,13 +216,15 @@ def player_analysis(players_df):
     
     with col1:
         pos_counts = players_df['posicao-g-f-fc-cf-c'].value_counts()
-        position_names = {1: '1 - Guard', 2: '2 - Forward', 3: '3 - Center', 4: '4 - Forward-Center', 5: '5 - Center-Forward'}
+        position_names = {1: '1 - Guard', 2: '2 - Forward', 3: '3 - Forward-Center', 4: '4 - Center-Forward', 5: '5 - Center'}
         
-        pos_labels = [position_names.get(pos, f"Posição {pos}") for pos in pos_counts.index]
+        ordered_positions = sorted([pos for pos in pos_counts.index if pos in position_names.keys()])
+        ordered_values = [pos_counts[pos] for pos in ordered_positions]
+        ordered_labels = [position_names[pos] for pos in ordered_positions]
         
         fig = px.pie(
-            values=pos_counts.values,
-            names=pos_labels,
+            values=ordered_values,
+            names=ordered_labels,
             title="Distribuição de Jogadores por Posição",
             color_discrete_sequence=px.colors.qualitative.Set3
         )
@@ -235,6 +237,11 @@ def player_analysis(players_df):
             'assistencias_media': 'mean',
             'porcentagem-arremessos_media': 'mean'
         }).round(2)
+
+        pos_stats = pos_stats.sort_index()
+        position_labels = {1: '1 - Guard', 2: '2 - Forward', 3: '3 - Forward-Center', 4: '4 - Center-Forward', 5: '5 - Center'}
+        pos_stats.index = [position_labels.get(pos, f"Posição {pos}") for pos in pos_stats.index]
+        pos_stats.index.name = 'Posição'  
 
         st.write("**Médias por Posição:**")
         st.dataframe(pos_stats, use_container_width=True)
@@ -445,7 +452,7 @@ def interactive_analysis(players_df, games_df):
     )
     
     positions = players_df['posicao-g-f-fc-cf-c'].unique()
-    position_names = {1: 'G', 2: 'F', 3: 'C', 4: 'FC', 5: 'CF'}
+    position_names = {1: 'G', 2: 'F', 3: 'FC', 4: 'CF', 5: 'C'}
     selected_positions = st.sidebar.multiselect(
         "Posições", 
         options=positions,
@@ -1040,7 +1047,7 @@ def player_specific_predictions(players_df):
     with col1:
         player_options = {}
         for idx, row in active_players.iterrows():
-            pos_name = {1: 'Guard', 2: 'Forward', 3: 'Center', 4: 'Forward-Center', 5: 'Center-Forward'}
+            pos_name = {1: 'Guard', 2: 'Forward', 3: 'Forward-Center', 4: 'Center-Forward', 5: 'Center'}
             position = pos_name.get(row['posicao-g-f-fc-cf-c'], f"Pos-{row['posicao-g-f-fc-cf-c']}")
             
             if 'nome-jogador' in row and pd.notna(row['nome-jogador']) and row['nome-jogador'].strip():
@@ -1101,7 +1108,7 @@ def player_specific_predictions(players_df):
         
         st.write("**Informações do Jogador:**")
         player_info_df = pd.DataFrame({
-            'Estatística': [
+            'Variável': [
                 'Nome',
                 'Posição', 
                 'Idade',
@@ -1114,7 +1121,7 @@ def player_specific_predictions(players_df):
             ],
             'Valor': [
                 player_data.get('nome-jogador', 'N/A') if pd.notna(player_data.get('nome-jogador')) else 'N/A',
-                {1: 'Guard', 2: 'Forward', 3: 'Center', 4: 'Forward-Center', 5: 'Center-Forward'}.get(player_data['posicao-g-f-fc-cf-c'], 'N/A'),
+                {1: 'Guard', 2: 'Forward', 3: 'Forward-Center', 4: 'Center-Forward', 5: 'Center'}.get(player_data['posicao-g-f-fc-cf-c'], 'N/A'),
                 f"{player_data['idade']} anos",
                 f"{player_data['jogos-disputados_total']} jogos",
                 f"{player_data['minutos_media']:.1f} min",
